@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify,request
 from flask_pymongo import PyMongo
 import requests,os
 from dotenv import load_dotenv
@@ -75,19 +75,18 @@ class Missing_ID:
     return self.data
   #-------------------------------------------------------------
   def train(self,index):
-    self.db.GET(index)
-    IDs = self.page(index)
-    if IDs == [] : return False
-    self.db.SET(index,IDs)
-    return True
+    val=self.db.GET(index)
+    if val==[]:
+      IDs = self.page(index)
+      if IDs == [] : return False
+      self.db.SET(index,IDs)
+      return True
+    else:
+      return True
       
 
        
 m=Missing_ID()
-index=1
-while m.train(index):
-  print('trained : ',index)
-  index+=1
 
 # Routes
 @app.route('/result')
@@ -105,6 +104,13 @@ def result():
   }
   return jsonify(res)
 
+@app.route('/ping')
+def ping():
+  index = request.args.get("x")
+  if m.train(int(index)) :
+    return {'state' : 1}
+  else: return {'state' : 0}
+  
 
 # init
 if __name__ == '__main__':
