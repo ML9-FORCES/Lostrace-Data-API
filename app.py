@@ -134,13 +134,13 @@ def result():
     return jsonify(res)
 
 
-@app.route('/ping')
-def ping():
-    index = request.args.get("x")
-    if m.train(int(index)):
-        return {'state': 1}
-    else:
-        return {'state': 0}
+# @app.route('/ping')
+# def ping():
+#     index = request.args.get("x")
+#     if m.train(int(index)):
+#         return {'state': 1}
+#     else:
+#         return {'state': 0}
 
 
 # init
