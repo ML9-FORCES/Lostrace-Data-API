@@ -1,13 +1,11 @@
-import bisect
-import requests
-from flask_cors import CORS, cross_origin
-from bs4 import BeautifulSoup
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request
 from flask_pymongo import PyMongo
 import requests
 import os
 from dotenv import load_dotenv
+from flask_cors import CORS, cross_origin
 load_dotenv()
+
 
 app = Flask(__name__)
 CORS = CORS(app)
@@ -27,91 +25,72 @@ def before_request():
 app.before_request(before_request)
 
 
+# class Database:
+#   def __init__(self):
+#     self.db = mongo.db.Data
+#   #-------------------------------------------------------------
+#   def GET(self,ID) :
+#     mydoc = self.db.find({"_id":ID})
+#     for json in mydoc: return json['Array']
+#     self.db.insert_one({"_id":ID,"Array":[]})
+#     return []
+#  #-------------------------------------------------------------
+#   def SET(self,ID,VALUE):
+#     query = {"_id":ID}
+#     value = {"$set":{"Array":VALUE}}
+#     self.db.update_one(query,value)
+
 # class Missing_ID:
-#     def __init__(self):
-#         self.db = mongo.db.Data
-#         self.URL = 'https://trackthemissingchild.gov.in/trackchild/photograph_missing.php?page='
-#         self.data = self.GET()
-#     # -------------------------------------------------------------
+#   def __init__(self):
+#     self.db = Database()
+#     self.URL = 'https://trackthemissingchild.gov.in/trackchild/photograph_missing.php?page='
+#     self.data = self.db.GET('data')
+#   #-------------------------------------------------------------
+#   def page(self,number):
+#     web = requests.post(self.URL+str(number))
+#     soup = BeautifulSoup(web.text,'html.parser')
+#     achors = soup.findAll('a',class_='thumbnail')
+#     missing_ids = []
+#     for block in achors:
+#       value=block['value']
+#       age_index = value.find("Current Age : ")+14
+#       id_index = value.find("missing_id=")+11
+#       Profile_no_index = value.find("profile_no=")+11
+#       age = int((value[age_index:age_index+3].split())[0])
+#       ID = value[id_index:id_index+60]
+#       Profile_no = value[Profile_no_index:Profile_no_index+18]
+#       if age<18:
+#         missing_ids.append([ID,Profile_no])
+#     return missing_ids
+#   #-------------------------------------------------------------
+#   def fetch(self,index=1):
+#     while True:
+#        IDs = self.page(index)
+#        if IDs == [] : break
+#        for ID in IDs:
+#          if ID[0] in self.data :
+#            self.SET();
+#            return self.data
+#          else:
+#            self.data.append(ID[0])
+#            self.data.sort()
+#            self.ADD(ID[0],ID[1])
+#        print('rendered page : ',index)
+#        self.SET(); index+=1
+#     return self.data
+#   #-------------------------------------------------------------
+#   def train(self,index):
+#     val=self.db.GET(index)
+#     if val==[]:
+#       IDs = self.page(index)
+#       if IDs == [] : return False
+#       self.db.SET(index,IDs)
+#       return True
+#     else:
+#       return True
 
-#     def GET(self):
-#         mydoc = self.db.find({"_id": 'Unique'})
-#         for json in mydoc:
-#             return eval(json['Array'])
-#         self.db.insert_one({"_id": 'Unique', "Array": []})
-#         return []
-#     # -------------------------------------------------------------
 
-#     def SET(self):
-#         query = {"_id": 'Unique'}
-#         value = {"$set": {"Array": str(self.data)}}
-#         self.db.update_one(query, value)
-#     # -------------------------------------------------------------
-
-#     def encode(self, Missing_id_str):
-#         s = [str(i) for i in Missing_id_str.split(".")]
-#         Missing_id_int = int("".join(s))
-#         return Missing_id_int
-#     # -------------------------------------------------------------
-
-#     def decode(self, Missing_id_int):
-#         s = str(Missing_id_int)
-#         substrings = [s[:2], s[2:4], s[4:6], s[6:8], s[8:10], s[10:12], s[12:14], s[14:17],
-#                       s[17:20], s[20:23], s[23:25], s[25:27], s[27:29], s[29:31], s[31:33], s[33:35], s[35:37], s[37:39], s[39:]]
-#         Missing_id_str = '.'.join(substrings)
-#         return Missing_id_str
-#     # -------------------------------------------------------------
-
-#     def binary_search(self, ID):
-#         low, mid, high = 0, 0, len(self.data) - 1
-#         while low <= high:
-#             mid = (high + low) // 2
-#             if self.data[mid] < ID:
-#                 low = mid + 1
-#             elif self.data[mid] > ID:
-#                 high = mid - 1
-#             else:
-#                 return True
-#         return False
-#     # -------------------------------------------------------------
-
-#     def append(self, ID):
-#         bisect.insort(self.data, ID)
-#     # -------------------------------------------------------------
-
-#     def page(self, number):
-#         web = requests.post(self.URL+str(number))
-#         soup = BeautifulSoup(web.text, 'html.parser')
-#         achors = soup.findAll('a', class_='thumbnail')
-#         missing_ids = []
-#         for block in achors:
-#             value = block['value']
-#             age_index = value.find("Current Age : ")+14
-#             id_index = value.find("missing_id=")+11
-#             age = int((value[age_index:age_index+3].split())[0])
-#             ID = value[id_index:id_index+60]
-#             if age < 18:
-#                 missing_ids.append(self.encode(ID))
-#         return missing_ids
-#     # -------------------------------------------------------------
-
-#     def fetch(self):
-#         index = 1
-#         while True:
-#             IDs = self.page(index)
-#             if IDs == []:
-#                 break
-#             for ID in IDs:
-#                 if self.binary_search(ID):
-#                     self.SET()
-#                     return self.data
-#                 else:
-#                     self.append(ID)
-#             print('rendered page : ', index)
-#             self.SET()
-#             index += 1
-#         return self.data
-
+# m=Missing_ID()
 
 # Routes
 # @app.route('/recieveimage')
@@ -153,6 +132,15 @@ def result():
         "Report_link": "https://trackthemissingchild.gov.in/trackchild/photograph_info_ps.php?profile_no=3281805mpw20220010&return_page=photograph_missing.php&type=missing&authority=1"
     }
     return jsonify(res)
+
+
+@app.route('/ping')
+def ping():
+    index = request.args.get("x")
+    if m.train(int(index)):
+        return {'state': 1}
+    else:
+        return {'state': 0}
 
 
 # init
