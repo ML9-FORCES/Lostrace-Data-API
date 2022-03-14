@@ -23,7 +23,7 @@ app.before_request(before_request)
 @app.route('/result', methods=['GET', 'POST'])
 def result():
     if request.method == 'POST':
-        if 'img' not in request.files:
+        `if 'img' not in request.files:
             return 'there is no file1 in form!'
         File = request.files['img']
         format = '.'+File.filename.split('.')[-1]
@@ -44,30 +44,6 @@ def result():
          }
          return res
 
-
-app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-@app.route('/', methods=['GET', 'POST'])
-def upload_file():
-    if request.method == 'POST':
-        if 'img' not in request.files:
-            return 'there is no file1 in form!'
-        File = request.files['img']
-        format = '.'+File.filename.split('.')[-1]
-        temp = tempfile.NamedTemporaryFile(suffix=format)
-        File.save(temp.name)
-        #load(temp.name)
-        temp.close()
-        return True
-
-    return '''
-    <h1>Upload new File</h1>
-    <form method="post" enctype="multipart/form-data">
-      <input type="file" name="file1">
-      <input type="submit">
-    </form>
-    '''
 
 # init
 if __name__ == '__main__':
