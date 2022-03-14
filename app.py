@@ -31,6 +31,8 @@ def result():
     temp = tempfile.NamedTemporaryFile(suffix=format)
     File.save(temp.name)
     #load(temp.name)
+    #e(1)
+    
     temp.close()
     res = {
     "Img": "https://trackthemissingchild.gov.in/trackchild/intra_trackchild/images_missing/3281805mpw20220010.jpg",
@@ -44,6 +46,7 @@ def result():
     "Report_link": "https://trackthemissingchild.gov.in/trackchild/photograph_info_ps.php?profile_no=3281805mpw20220010&return_page=photograph_missing.php&type=missing&authority=1"
     }
     return res
+    
 
 
 # init

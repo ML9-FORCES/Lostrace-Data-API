@@ -64,12 +64,6 @@ class Missing_ID:
       return True
 
 
-class Reverse_search:
-  def __init__(self):
-    pass
-  def vectorize(self,path):
-    if 'http' in path:
-      img=None
-    else:
-      img=None
+
+
     
