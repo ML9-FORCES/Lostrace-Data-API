@@ -1,5 +1,6 @@
 from flask import Flask, render_template, jsonify, request
 from flask_pymongo import PyMongo
+import tempfile
 import requests
 import os
 from dotenv import load_dotenv
