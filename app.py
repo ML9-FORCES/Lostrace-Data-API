@@ -6,6 +6,7 @@ import os
 from dotenv import load_dotenv
 from flask_cors import CORS, cross_origin
 load_dotenv()
+from helpers import *
 
 
 app = Flask(__name__)
@@ -47,6 +48,14 @@ def result():
     }
     return res
     
+
+@app.route('/test')
+def test():
+  db=Database(mongo,True)
+  data,vector=db.GET()
+  query='https://www.looper.com/img/gallery/the-transformation-of-a-j-cook-from-childhood-to-criminal-minds/intro-1616872412.jpg'
+  res=Flex_Search().find(query,data,vector)
+  return(res)
 
 
 # init
