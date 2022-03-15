@@ -15,7 +15,7 @@ mongo = PyMongo(app)
 CORS = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 
-
+#hhh
 def before_request():
     app.jinja_env.cache = {}
 app.before_request(before_request)
@@ -35,7 +35,7 @@ def result():
     data,vector=db.GET()
     res=Flex_Search().find(temp.name,data,vector)
     temp.close()
-    return(res)
+    return(res) 	
     res = {
     "Img": "https://trackthemissingchild.gov.in/trackchild/intra_trackchild/images_missing/3281805mpw20220010.jpg",
     "Name": "PANCHANU KUMAR RAJAK",
