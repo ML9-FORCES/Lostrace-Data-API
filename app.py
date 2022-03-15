@@ -31,10 +31,11 @@ def result():
     format = '.'+File.filename.split('.')[-1]
     temp = tempfile.NamedTemporaryFile(suffix=format)
     File.save(temp.name)
-    #load(temp.name)
-    #e(1)
-    
+    db=Database(mongo,True)
+    data,vector=db.GET()
+    res=Flex_Search().find(temp.name,data,vector)
     temp.close()
+    return(res)
     res = {
     "Img": "https://trackthemissingchild.gov.in/trackchild/intra_trackchild/images_missing/3281805mpw20220010.jpg",
     "Name": "PANCHANU KUMAR RAJAK",
