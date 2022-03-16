@@ -142,7 +142,9 @@ class Database:
   def encode(self):
     if self.inter_data==[]: return 0
     vectorize = lambda x : Flex_Search().vector(info().img(x))
-    self.inter_vector = expresso().brew(vectorize,self.inter_data)
+    #self.inter_vector = expresso().brew(vectorize,self.inter_data)
+    for i in self.inter_data:
+      self.inter_vector.append(vectorize(i))
   #-------------------------------------------------------------
   def push(self):
     if self.inter_data==[]: return 0

@@ -45,6 +45,7 @@ def result():
     res=Flex_Search().find(temp.name,db.data,db.vector)
     temp.close()
     return jsonify(res)
+    
 
 
 # init
