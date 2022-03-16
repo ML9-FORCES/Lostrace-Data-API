@@ -31,7 +31,7 @@ def result():
     format = '.'+File.filename.split('.')[-1]
     temp = tempfile.NamedTemporaryFile(suffix=format)
     File.save(temp.name)
-    flag = int(request.form.get('flag'))
+    flag = bool(int(request.form.get('flag')))
     db=Database(mongo,flag)
     print('Retriving Database')
     db.get()
