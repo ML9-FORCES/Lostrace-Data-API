@@ -18,8 +18,8 @@ class ThreadWithResult(threading.Thread):
 #############################################################################################################################
 
 class expresso:
-  def __init__(self):
-    self.batch_size=25
+  def __init__(self,batch_size=25):
+    self.batch_size=batch_size
   #---------------------------------------------------------
   def batch(self,Process,input_list):
     packet =[ ThreadWithResult(target = Process,args=(i,)) for i in input_list]
@@ -104,7 +104,9 @@ class Flex_Search:
   #-------------------------------------------------
   def find(self,path,data_arr,vector_arr):
     self.model.fit(vector_arr)
+    error={'flag':0}
     vector = [self.vector(path)]
+    if list(vector[0])==list(np.zeros(128)) : return error
     distances,indices = self.model.kneighbors(vector)
     result_arr=[]; distance_arr=[]
     for i,ind in enumerate(indices[0]):
@@ -115,7 +117,7 @@ class Flex_Search:
       res=[[x,y] for y,x in sorted(zip(distance_arr,result_arr))][0][0]
       res=info().fetch(res)
     except:
-      res={'flag':0}
+      return error
     return res
 
 #############################################################################################################################
@@ -142,9 +144,7 @@ class Database:
   def encode(self):
     if self.inter_data==[]: return 0
     vectorize = lambda x : Flex_Search().vector(info().img(x))
-    #self.inter_vector = expresso().brew(vectorize,self.inter_data)
-    for i in self.inter_data:
-      self.inter_vector.append(vectorize(i))
+    self.inter_vector = expresso(5).brew(vectorize,self.inter_data)
   #-------------------------------------------------------------
   def push(self):
     if self.inter_data==[]: return 0
