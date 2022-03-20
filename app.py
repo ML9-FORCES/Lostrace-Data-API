@@ -1,53 +1,53 @@
-from flask import Flask, render_template, jsonify, request
+# Data-API Implementation 2022 Smart India Hackathon
+# Contributors Garvit Chouhan, Kaustub Dutt Pandey, Chelsi Jain
+
+# Dependencies
+from flask import Flask, jsonify, request
 from flask_pymongo import PyMongo
-import tempfile
-import requests
-import os
 from dotenv import load_dotenv
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS
+from Flex_Algo import *
+import os
 load_dotenv()
-from Flex_Search import *
 
-
+# Initialize Flask App
 app = Flask(__name__)
+
+# Connect MongoDB
 app.config["MONGO_URI"] = os.getenv("MONGO_URI")
 mongo = PyMongo(app)
-CORS = CORS(app)
-app.config['CORS_HEADERS'] = 'Content-Type'
 
-#hhh
+# API Cross Origin Support
+CORS = CORS(app)
+
+# Runtime Catch
 def before_request():
     app.jinja_env.cache = {}
 app.before_request(before_request)
 
-
-
-@app.route('/result', methods=['GET', 'POST'])
+# result endpoint
+@app.route('/result', methods=['POST'])
 def result():
   if request.method == 'POST':
     if 'img' not in request.files:
-      return 'there is no file1 in form!'
+      return 'There is no file in form!'
+    #.........................................
     File = request.files['img']
-    format = '.'+File.filename.split('.')[-1]
-    temp = tempfile.NamedTemporaryFile(suffix=format)
-    File.save(temp.name)
-    flag = bool(int(request.form.get('flag')))
-    db=Database(mongo,flag)
-    print('Retriving Database')
-    db.get()
-    print('Fetching Updates')
-    db.fetch()
-    print('Encoding Vectors')
-    db.encode()
-    print('Updating Database')
-    db.push()
-    print('Flex_Searching')
-    res=Flex_Search().find(temp.name,db.data,db.vector)
-    temp.close()
-    return jsonify(res)
-    
+    Mode = bool(int(request.form.get('flag')))
+    Affine = Flex_Wrapper(File,mongo,Mode)
+    #.........................................
+    print('Fetching New Data')
+    Affine.fetch() 
+    print('Encoding New Data')
+    Affine.encode() 
+    print('Updating Database State')
+    Affine.update()
+    print('Flex Searching Image')
+    Affine.search()
+    #.........................................
+    return jsonify(Affine.res)
 
 
-# init
+# Run Server
 if __name__ == '__main__':
     app.run(debug=True)
