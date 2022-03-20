@@ -10,6 +10,7 @@ import numpy as np
 import threading
 import tempfile
 import requests
+import time
 
 
 #----------------------------------------------------------------------------------------------------------------------------
@@ -145,8 +146,8 @@ class Retrive:
   
   def _fetch_real_( self , render_size ):
     #...............
-    #workers = 25 if render_size > 25 else render_size
-    data = Expresso( 25 ).brew( self._extract_, [ page_number for page_number in range(1,render_size+1) ] )
+    workers = 25 if render_size > 25 else render_size*2
+    data = Expresso( workers ).brew( self._extract_, [ page_number for page_number in range(1,render_size+1) ] )
     missing_ids = []
     for i in data:
        for j in i: missing_ids.append(j)
@@ -162,7 +163,7 @@ class Retrive:
     if Mode:
       return [ Point for Point in self._fetch_dummy_() if Point not in Existing_Data_Points ]
     else:
-      Existing_Data_Points= [ Point[1] for Point in Existing_Data_Points]
+      Existing_Data_Points= [ Point[1] for Point in Existing_Data_Points[:500]]
       Fetched_Data_Points=self._fetch_real_(10)
       New_Data_Points=[]
       for Point in Fetched_Data_Points:
