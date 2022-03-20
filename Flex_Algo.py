@@ -145,8 +145,8 @@ class Retrive:
   
   def _fetch_real_( self , render_size ):
     #...............
-    workers = 25 if render_size > 25 else render_size
-    data = Expresso( workers ).brew( self._extract_, [ page_number for page_number in range(1,render_size+1) ] )
+    #workers = 25 if render_size > 25 else render_size
+    data = Expresso( 25 ).brew( self._extract_, [ page_number for page_number in range(1,render_size+1) ] )
     missing_ids = []
     for i in data:
        for j in i: missing_ids.append(j)
@@ -233,8 +233,8 @@ class Flex:
   def batch_encode( self, Data_Points ):
     #...............
     if Data_Points==[]: return []
-    Data_Points = [self._img_link_(Point) for Point in Data_Points]
-    return Expresso(5).brew( self.encode, Data_Points )
+    Data_Points = [ self._img_link_(Point) for Point in Data_Points ]
+    return [ self.encode(Point) for Point in Data_Points ]
   
   #-------------------------------------------------
   
@@ -308,7 +308,7 @@ class Database:
   def Get(self, index):
     #...............
     for json in self.db.find({"_id":index}):
-      return json['data'],[np.array(i) for i in json['vector']]
+      return json['data'],[ np.array(i) for i in json['vector'] ]
       
   #-------------------------------------------------------------
   
