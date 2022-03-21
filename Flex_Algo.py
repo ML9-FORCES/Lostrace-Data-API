@@ -109,15 +109,15 @@ class Retrive:
 
   def __init__( self, Database_Object ):
     #...............
-    self.Database = Database_Object
-    self.URL_R = 'https://trackthemissingchild.gov.in/trackchild/photograph_missing.php?pagination=pagination&filter=child&page='
-    self.URL_D = 'https://ml9-forces.github.io/Lostrace-Database/'
+    self._Database_ = Database_Object
+    self._URL_R_ = 'https://trackthemissingchild.gov.in/trackchild/photograph_missing.php?pagination=pagination&filter=child&page='
+    self._URL_D_ = 'https://ml9-forces.github.io/Lostrace-Database/'
     
   #-------------------------------------------------------------
 
   def _extract_( self, page_number ):
     #...............
-    web = requests.post(self.URL_R+str(page_number))
+    web = requests.post(self._URL_R_+str(page_number))
     soup = BeautifulSoup(web.text,'html.parser')
     achors = soup.findAll('a',class_='thumbnail')
     missing_ids = []
@@ -135,7 +135,7 @@ class Retrive:
   
   def _fetch_dummy_( self ):
     #...............
-    web = requests.get(self.URL_D)
+    web = requests.get(self._URL_D_)
     soup = BeautifulSoup(web.text,'html.parser')
     img_tag = soup.findAll('img',alt_='')
     names = []
@@ -159,7 +159,7 @@ class Retrive:
     #...............
     id_arr = ["Dummy_Data"] if Mode else [0,1]
     Existing_Data_Points=[]
-    for _id in id_arr : Existing_Data_Points += self.Database.Data_Points(_id)
+    for _id in id_arr : Existing_Data_Points += self._Database_.Data_Points(_id)
     if Mode:
       return [ Point for Point in self._fetch_dummy_() if Point not in Existing_Data_Points ]
     else:
@@ -196,7 +196,8 @@ class Flex:
       Returns : Encoded Vector Array of Data_Points Respective Images
   
   search(Query_vector, data_arr, vector_arr)
-      Return [Data_Point,Score] for Minimum Score of Query_vector in vector_arr
+      Return { 'Phase':True, 'Data':<data-point>, 'Score':<min-distance> }
+             { 'Phase':False, 'error':<error-msg> }
   ...
   """
   
@@ -243,7 +244,7 @@ class Flex:
     #...............
     self._model_.fit(vector_arr)
     vector = [Query_vector]
-    if list(vector[0])==list(np.zeros(128)) : return {'error','No Face Detected'}
+    if list(vector[0]) == list(np.zeros(128)): return { 'Phase':False, 'error':'No Face Detected' }
     distances,indices = self._model_.kneighbors(vector)
     result_arr=[]; distance_arr=[]
     for i,ind in enumerate(indices[0]):
@@ -252,8 +253,8 @@ class Flex:
         distance_arr.append(distances[0][i])
     try:
       res=[[x,y] for y,x in sorted(zip(distance_arr,result_arr))][0]
-    except: return {'error':'Person Not Found'}
-    return res
+    except: return { 'Phase':False, 'error':'Person Not Found' }
+    return { 'Phase':True, 'Data':res[0], 'Score':res[1] }
 
 
 #----------------------------------------------------------------------------------------------------------------------------
@@ -358,22 +359,21 @@ class Info:
                  Place_of_Missing
                  Date_of_Missing
                }
-      
   ...
   """
   
   def __init__(self):
     #...............
-    self.img_r = lambda profile : "https://trackthemissingchild.gov.in/trackchild/intra_trackchild/images_missing/"+ profile +".jpg"
-    self.profile = lambda ID : "https://trackthemissingchild.gov.in/trackchild/missing_dtl.php?missing_id=" + ID
-    self.report = lambda profile : "https://trackthemissingchild.gov.in/trackchild/photograph_info_ps.php?profile_no=" +profile +"&return_page=photograph_missing.php&type=missing&authority=1"
-    self.img_d = lambda file_name : 'https://ml9-forces.github.io/Lostrace-Database/media/original/'+file_name 
+    self._img_r_ = lambda profile : "https://trackthemissingchild.gov.in/trackchild/intra_trackchild/images_missing/"+ profile +".jpg"
+    self._profile_ = lambda ID : "https://trackthemissingchild.gov.in/trackchild/missing_dtl.php?missing_id=" + ID
+    self._report_ = lambda profile : "https://trackthemissingchild.gov.in/trackchild/photograph_info_ps.php?profile_no=" +profile +"&return_page=photograph_missing.php&type=missing&authority=1"
+    self._img_d_ = lambda file_name : 'https://ml9-forces.github.io/Lostrace-Database/media/original/'+file_name 
     
   #-------------------------------------------------------------
   
   def _Scrap_details_(self,array):
     #...............
-    url = self.profile(array[0])
+    url = self._profile_(array[0])
     html = requests.get(url)
     scrapper = BeautifulSoup(html.text,'html.parser')
     p_tags = scrapper.findAll('p')
@@ -389,9 +389,9 @@ class Info:
     res={}
     if type(Input)==type([]):
       details = self._Scrap_details_(Input)
-      res["Img"] = self.img_r(Input[1])
-      res["Report_link"] = self.report(Input[1])
-      res["Profile_link"] = self.profile(Input[0]) 
+      res["Img"] = self._img_r_(Input[1])
+      res["Report_link"] = self._report_(Input[1])
+      res["Profile_link"] = self._profile_(Input[0]) 
       res["Name"] = details[0]
       res["Current_Age"] = details[1]
       res["Gender"] = details[2]
@@ -400,7 +400,7 @@ class Info:
       res["Date_of_Missing"] = details[5]
       return res
     else:
-      res["Img"] = self.img_d(Input)
+      res["Img"] = self._img_d_(Input)
       res["Report_link"] = "https://trackthemissingchild.gov.in/trackchild/photograph_info_ps.php?profile_no=3281805mpw20220010&return_page=photograph_missing.php&type=missing&authority=1"
       res["Profile_link"] = "https://trackthemissingchild.gov.in/trackchild/missing_dtl.php?missing_id=47.46.52.45.52.44.49.105.108.115.46.44.46.46.44.44.45.44.102#verticalTab1"
       res["Name"] = Input.split('.')[0]
@@ -502,58 +502,77 @@ class Flex_Wrapper:
   
   def search( self ):
     #...............
-    search_mode=['Discrete','Integrated'][1]
-    #...............
-    if search_mode == 'Discrete' :
-      result_arr=[]
-      distance_arr=[]
-      for index in self._db_.id:
-        self._Data_,self._Vector_=self._db_.Get(index)
-        value = self._flex_.search(self._Query_Vector_,self._Data_,self._Vector_)
-        if bool(value): result_arr.append(value[0]); distance_arr.append(value[1])
-      try: 
-        res = [[x,y] for y,x in sorted(zip(distance_arr,result_arr))][0][0]
-        self.res = self._info_.fetch(res)
-      except: pass
-    #...............
-    if search_mode == 'Integrated' :
-      self._Data_=[]
-      self._Vector_=[]
-      for index in self._db_.id:
-        pack=self._db_.Get(index)
-        self._Data_   = self._Data_   + pack[0]
-        self._Vector_ = self._Vector_ + pack[1]
-        del pack
+    result_arr=[]
+    distance_arr=[]
+    for index in self._db_.id:
+      self._Data_,self._Vector_=self._db_.Get(index)
       res = self._flex_.search(self._Query_Vector_,self._Data_,self._Vector_)
-      if 'error' not in res : self.res = self._info_.fetch(res[0])
-      else: self.res = res
+      if res['Phase']: 
+        result_arr.append(res['Data'])
+        distance_arr.append(res['Score'])
+      else:
+        self.res = res;
+        if res['error']=='No Face Detected': break
+    try: 
+      res = [[x,y] for y,x in sorted(zip(distance_arr,result_arr))][0][0]
+      self.res = self._info_.fetch(res)
+    except: pass
 
 
 #----------------------------------------------------------------------------------------------------------------------------
 #----------------------------------------------------------------------------------------------------------------------------   
 
 class Background_Task:
+  
+  """ 
+  Background_Task Class Manages Flex Search in Background with Threaded Process
+  ...
+  
+  Initialize
+  ----------
+  Background_Task(Mongo_Object)
+      Initialize Background_Task Object 
 
+  Methods
+  -------
+  run(File_Object,Mode)
+    Initialize Flex Search
+    Return : Url(GET) for Search Status Query
+             { 'Task' : <Url> }
+  
+  state(Task_id)
+    Return Search Status : { 'Phase':<_>, 'Info':<_> }
+    - Phase: Success      Info : Person-Details (Dictionary)
+    - Phase: Process      Info : Current Running Process (String)
+    - Phase: Failure      Info : Error Message (String)
+  ...
+  """
+  
   def __init__(self,Mongo_Object):
     #...............
-    self.mongo = Mongo_Object
-    self.task = Mongo_Object.db.Tasks
+    self._mongo_ = Mongo_Object
+    self._task_ = Mongo_Object.db.Tasks
    
   #------------------------------------------------------------- 
     
   def _Process_( self, Affine, Task_id):
     #...............
     self._update_(Task_id,{'Phase':'Process','Info':'Fetching New Data'})
+    print('Fetching New Data')
     Affine.fetch() 
     #...............
     self._update_(Task_id,{'Phase':'Process','Info':'Encoding New Data'})
+    print('Encoding New Data')
     Affine.encode()
     #............... 
     self._update_(Task_id,{'Phase':'Process','Info':'Updating Database State'})
+    print('Updating Database State')
     Affine.update()
     #...............
     self._update_(Task_id,{'Phase':'Process','Info':'Flex Searching Image'})
+    print('Flex Searching Image')
     Affine.search()
+    print('Search Done')
     #...............
     if 'error' in Affine.res :
       self._update_(Task_id,{'Phase':'Failure','Info':Affine.res['error']})
@@ -566,26 +585,28 @@ class Background_Task:
     #...............
     query = {"_id":task_id}
     value = {"$set":{"value":value}}
-    self.task.update_one(query,value)
+    self._task_.update_one(query,value)
   
   #-------------------------------------------------------------
        
   def run(self,File_Object,Mode):
     #...............
-    res={'value':{}}
-    Task_id = self.task.insert_one(res).inserted_id
+    url = lambda ID : 'https://lostrace-data-api.herokuapp.com/state/' + str(ID)
+    res={ 'value':{} }
+    Task_id = self._task_.insert_one(res).inserted_id
     if File_Object == None : self._update_(Task_id,{'Phase':'Failure','Info':'No Image Uploaded'})
     else:
-      Affine = Flex_Wrapper(File_Object,self.mongo,Mode)
+      print('Encoding Query Image')
+      Affine = Flex_Wrapper(File_Object,self._mongo_,Mode)
       task = ThreadWithResult( target = self._Process_, args=(Affine,Task_id) )
       task.start()
-    return {'Task_id':str(Task_id)}
+    return {'Task':url(Task_id)}
   
   #-------------------------------------------------------------
    
   def state(self,task_id):
     #...............
-    task = self.task.find_one_or_404(task_id)
+    task = self._task_.find_one_or_404(task_id)
     return task['value']
     
 
