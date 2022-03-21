@@ -163,7 +163,7 @@ class Retrive:
     if Mode:
       return [ Point for Point in self._fetch_dummy_() if Point not in Existing_Data_Points ]
     else:
-      Existing_Data_Points= [ Point[1] for Point in Existing_Data_Points[:500]]
+      Existing_Data_Points= [ Point[1] for Point in Existing_Data_Points ]
       Fetched_Data_Points=self._fetch_real_(10)
       New_Data_Points=[]
       for Point in Fetched_Data_Points:
@@ -243,7 +243,7 @@ class Flex:
     #...............
     self._model_.fit(vector_arr)
     vector = [Query_vector]
-    if list(vector[0])==list(np.zeros(128)) : return []
+    if list(vector[0])==list(np.zeros(128)) : return {'error','No Face Detected'}
     distances,indices = self._model_.kneighbors(vector)
     result_arr=[]; distance_arr=[]
     for i,ind in enumerate(indices[0]):
@@ -252,7 +252,7 @@ class Flex:
         distance_arr.append(distances[0][i])
     try:
       res=[[x,y] for y,x in sorted(zip(distance_arr,result_arr))][0]
-    except: return []
+    except: return {'error':'Person Not Found'}
     return res
 
 
@@ -357,7 +357,6 @@ class Info:
                  Father_Name
                  Place_of_Missing
                  Date_of_Missing
-                 flag 
                }
       
   ...
@@ -399,7 +398,6 @@ class Info:
       res["Father_Name"] = details[3]
       res["Place_of_Missing"] = details[4]
       res["Date_of_Missing"] = details[5]
-      res["flag"]=1
       return res
     else:
       res["Img"] = self.img_d(Input)
@@ -411,7 +409,6 @@ class Info:
       res["Father_Name"] = "BHUDEB RAJAK"
       res["Place_of_Missing"] = "SREEBHUMI"
       res["Date_of_Missing"] = "10/03/2022"
-      res["flag"]=1
       return res
 
 
@@ -469,14 +466,14 @@ class Flex_Wrapper:
     self._Mode_         = Mode
     self._Data_         = []
     self._Vector_       = []
-    self.res            = { 'flag' : 0 }
+    self.res            = {}
     
   #-------------------------------------------------------------
  
   def _load_form_Image_( self, File_Object ):
     #...............
     Format = '.' + File_Object.filename.split('.')[-1]
-    File = tempfile.NamedTemporaryFile( suffix=Format )
+    File = tempfile.NamedTemporaryFile( suffix = Format )
     File_Object.save(File.name)
     vector = self._flex_.encode(File.name)
     File.close()
@@ -505,17 +502,92 @@ class Flex_Wrapper:
   
   def search( self ):
     #...............
-    result_arr=[]
-    distance_arr=[]
-    for index in self._db_.id:
-      self._Data_,self._Vector_=self._db_.Get(index)
-      value = self._flex_.search(self._Query_Vector_,self._Data_,self._Vector_)
-      if bool(value): result_arr.append(value[0]); distance_arr.append(value[1])
-    try: 
-      res = [[x,y] for y,x in sorted(zip(distance_arr,result_arr))][0][0]
-      self.res = self._info_.fetch(res)
-    except: pass
+    search_mode=['Discrete','Integrated'][1]
+    #...............
+    if search_mode == 'Discrete' :
+      result_arr=[]
+      distance_arr=[]
+      for index in self._db_.id:
+        self._Data_,self._Vector_=self._db_.Get(index)
+        value = self._flex_.search(self._Query_Vector_,self._Data_,self._Vector_)
+        if bool(value): result_arr.append(value[0]); distance_arr.append(value[1])
+      try: 
+        res = [[x,y] for y,x in sorted(zip(distance_arr,result_arr))][0][0]
+        self.res = self._info_.fetch(res)
+      except: pass
+    #...............
+    if search_mode == 'Integrated' :
+      self._Data_=[]
+      self._Vector_=[]
+      for index in self._db_.id:
+        pack=self._db_.Get(index)
+        self._Data_   = self._Data_   + pack[0]
+        self._Vector_ = self._Vector_ + pack[1]
+        del pack
+      res = self._flex_.search(self._Query_Vector_,self._Data_,self._Vector_)
+      if 'error' not in res : self.res = self._info_.fetch(res[0])
+      else: self.res = res
 
 
 #----------------------------------------------------------------------------------------------------------------------------
 #----------------------------------------------------------------------------------------------------------------------------   
+
+class Background_Task:
+
+  def __init__(self,Mongo_Object):
+    #...............
+    self.mongo = Mongo_Object
+    self.task = Mongo_Object.db.Tasks
+   
+  #------------------------------------------------------------- 
+    
+  def _Process_( self, Affine, Task_id):
+    #...............
+    self._update_(Task_id,{'Phase':'Process','Info':'Fetching New Data'})
+    Affine.fetch() 
+    #...............
+    self._update_(Task_id,{'Phase':'Process','Info':'Encoding New Data'})
+    Affine.encode()
+    #............... 
+    self._update_(Task_id,{'Phase':'Process','Info':'Updating Database State'})
+    Affine.update()
+    #...............
+    self._update_(Task_id,{'Phase':'Process','Info':'Flex Searching Image'})
+    Affine.search()
+    #...............
+    if 'error' in Affine.res :
+      self._update_(Task_id,{'Phase':'Failure','Info':Affine.res['error']})
+    else:
+      self._update_(Task_id,{'Phase':'Success','Info':Affine.res})
+  
+  #-------------------------------------------------------------
+  
+  def _update_(self,task_id,value):
+    #...............
+    query = {"_id":task_id}
+    value = {"$set":{"value":value}}
+    self.task.update_one(query,value)
+  
+  #-------------------------------------------------------------
+       
+  def run(self,File_Object,Mode):
+    #...............
+    res={'value':{}}
+    Task_id = self.task.insert_one(res).inserted_id
+    if File_Object == None : self._update_(Task_id,{'Phase':'Failure','Info':'No Image Uploaded'})
+    else:
+      Affine = Flex_Wrapper(File_Object,self.mongo,Mode)
+      task = ThreadWithResult( target = self._Process_, args=(Affine,Task_id) )
+      task.start()
+    return {'Task_id':str(Task_id)}
+  
+  #-------------------------------------------------------------
+   
+  def state(self,task_id):
+    #...............
+    task = self.task.find_one_or_404(task_id)
+    return task['value']
+    
+
+#----------------------------------------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------------------    

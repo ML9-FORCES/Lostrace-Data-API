@@ -3,7 +3,7 @@
 
 # Dependencies
 from flask import Flask, jsonify, request
-from flask_pymongo import PyMongo
+from flask_pymongo import PyMongo,ObjectId
 from dotenv import load_dotenv
 from flask_cors import CORS
 from Flex_Algo import *
@@ -25,28 +25,24 @@ def before_request():
     app.jinja_env.cache = {}
 app.before_request(before_request)
 
-# result endpoint
-@app.route('/result', methods=['POST'])
+Flex_Process = Background_Task(mongo)
+
+# search endpoint
+@app.route('/search', methods=['POST'])
 def result():
   if request.method == 'POST':
-    if 'img' not in request.files:
-      return 'There is no file in form!'
-    #.........................................
-    File = request.files['img']
+    if 'img' not in request.files: File = None
+    else: File = request.files['img']
     Mode = bool(int(request.form.get('flag')))
-    Affine = Flex_Wrapper(File,mongo,Mode)
-    #.........................................
-    print('Fetching New Data')
-    Affine.fetch() 
-    print('Encoding New Data')
-    Affine.encode() 
-    print('Updating Database State')
-    Affine.update()
-    print('Flex Searching Image')
-    Affine.search()
-    #.........................................
-    return jsonify(Affine.res)
+    task = Flex_Process.run(File,Mode)
+    return jsonify(task)
 
+# state endpoint
+@app.route("/state/<ObjectId:task_id>")
+def state(task_id):
+    res = Flex_Process.state(task_id)
+    return jsonify(res)
+    
 
 # Run Server
 if __name__ == '__main__':
