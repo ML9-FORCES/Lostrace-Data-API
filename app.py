@@ -54,11 +54,11 @@ Returns                                                                       |
 
 
 # Dependencies
+from Flex_Algo.Background_Task_Module import *
 from flask import Flask, jsonify, request
 from flask_pymongo import PyMongo,ObjectId
 from dotenv import load_dotenv
 from flask_cors import CORS
-from Flex_Algo import *
 import os
 load_dotenv()
 
@@ -101,4 +101,4 @@ def state(task_id):
 
 # Run Server
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()
