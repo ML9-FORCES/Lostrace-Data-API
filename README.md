@@ -41,3 +41,6 @@
                - 'No Image Uploaded'                                          
                - 'No Face Detected'                                           
                - 'Person Not Found' 
+
+## Data API Flow
+![Flow](Flow/Flow.svg)
